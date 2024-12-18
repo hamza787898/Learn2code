@@ -1,0 +1,59 @@
+#include <iostream>
+#include <windows.h>
+#include <tlhelp32.h>
+#include <tchar.h>
+
+using namespace std;
+
+void ListProcesses() {
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+
+    if (hProcessSnap == INVALID_HANDLE_VALUE || !Process32First(hProcessSnap, &pe32)) {
+        cout << "Error retrieving processes." << endl;
+        return;
+    }
+
+    cout << "PID\t\tProcess Name\n";
+    do {
+        cout << pe32.th32ProcessID << "\t\t" << pe32.szExeFile << endl;
+    } while (Process32Next(hProcessSnap, &pe32));
+
+    CloseHandle(hProcessSnap);
+}
+
+void TerminateProcessByID(DWORD processID) {
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, processID);
+
+    if (hProcess != NULL) {
+        if (TerminateProcess(hProcess, 0)) {
+            cout << "Process " << processID << " terminated." << endl;
+        } else {
+            cout << "Unable to terminate process " << processID << "." << endl;
+        }
+        CloseHandle(hProcess);
+    } else {
+        cout << "Process not found or access denied." << endl;
+    }
+}
+
+int main() {
+    int choice;
+    DWORD pid;
+
+    do {
+        cout << "\n1. List processes\n2. Terminate process\n3. Exit\nChoice: ";
+        cin >> choice;
+
+        if (choice == 1) {
+            ListProcesses();
+        } else if (choice == 2) {
+            cout << "Enter Process ID: ";
+            cin >> pid;
+            TerminateProcessByID(pid);
+        }
+    } while (choice != 3);
+
+    return 0;
+}
